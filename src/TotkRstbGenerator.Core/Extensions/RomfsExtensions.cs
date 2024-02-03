@@ -23,7 +23,7 @@ public static class RomfsExtensions
     public static string ToCanonical(this string path)
     {
         string ext = Path.GetExtension(path);
-        if (ext is ".zs" or ".mc") {
+        if (ext is ".zs" or ".mc" && !path.EndsWith(".ta.zs")) {
             return path[..^3]
                 .Replace(Path.DirectorySeparatorChar, '/');
         }
@@ -36,7 +36,7 @@ public static class RomfsExtensions
     public static string GetRomfsExtension(this string path, out bool isZsCompressed)
     {
         string ext = Path.GetExtension(path);
-        if (ext is ".zs") {
+        if (ext is ".zs" && !path.EndsWith(".ta.zs")) {
             isZsCompressed = true;
             return Path.GetExtension(path[..^3]);
         }

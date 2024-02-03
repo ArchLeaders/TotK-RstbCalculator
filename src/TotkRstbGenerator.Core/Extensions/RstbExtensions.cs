@@ -44,7 +44,7 @@ public static class RstbExtensions
     public static int Calculate(this string file, string romfs, out string? canonical, out string? relativePath)
     {
         string ext = file.GetRomfsExtension(out bool isZsCompressed);
-        if (ext is ".rsizetable" or ".bwav" or ".webm" or ".ta") {
+        if (ext is ".rsizetable" or ".bwav" or ".webm") {
             relativePath = null;
             canonical = null;
             return -1;

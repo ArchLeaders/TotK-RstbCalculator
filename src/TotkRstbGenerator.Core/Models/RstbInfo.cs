@@ -52,6 +52,7 @@ public static class RstbInfo
         { ".txtg", 256 },
         { ".txt", 256 },
         { ".vsts", 256 },
-        { ".wbr", 256 }
+        { ".wbr", 256 },
+        { ".zs", 256 } // .ta.zs
     };
 }
