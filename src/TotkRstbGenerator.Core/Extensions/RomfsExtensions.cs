@@ -20,6 +20,32 @@ public static class RomfsExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string ToCanonical(this string path)
+    {
+        string ext = Path.GetExtension(path);
+        if (ext is ".zs" or ".mc") {
+            return path[..^3]
+                .Replace(Path.DirectorySeparatorChar, '/');
+        }
+
+        return path
+            .Replace(Path.DirectorySeparatorChar, '/');
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string GetRomfsExtension(this string path, out bool isZsCompressed)
+    {
+        string ext = Path.GetExtension(path);
+        if (ext is ".zs") {
+            isZsCompressed = true;
+            return Path.GetExtension(path[..^3]);
+        }
+
+        isZsCompressed = false;
+        return ext;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string GetRsizetableFile(this string romfs)
     {
         return Path.Combine(romfs, "System", "Resource", $"ResourceSizeTable.{romfs.GetVersion()}.rsizetable.zs");

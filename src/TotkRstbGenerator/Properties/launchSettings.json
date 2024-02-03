@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "TotkRstbGenerator": {
+      "commandName": "Project",
+      "commandLineArgs": "gen F:\\Games\\RomFS\\TotK\\1.2.1 -o \"D:\\bin\\Rstb\\Generated\\ResourceSizeTable.Product.121.rsizetable.zs\""
+    }
+  }
+}
