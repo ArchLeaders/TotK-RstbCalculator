@@ -54,15 +54,15 @@ public static class ZstdExtension
         return _defaultDecompressor.Unwrap(buffer);
     }
 
-    public static int GetDecompressedSize(this string file)
+    public static uint GetDecompressedSize(this string file)
     {
         using FileStream fs = File.OpenRead(file);
-        Span<byte> header = stackalloc byte[0x12];
+        Span<byte> header = stackalloc byte[14];
         fs.Read(header);
         return GetFrameContentSize(header);
     }
 
-    private static int GetFrameContentSize(Span<byte> buffer)
+    private static uint GetFrameContentSize(Span<byte> buffer)
     {
         byte descriptor = buffer[4];
         int windowDescriptorSize = ((descriptor & 0b00100000) >> 5) ^ 0b1;
@@ -80,9 +80,9 @@ public static class ZstdExtension
         };
 
         return frameContentFlag switch {
-            0x0 => 0,
-            0x1 => buffer[offset..].Read<short>(),
-            0x2 => buffer[offset..].Read<int>(),
+            0x0 => buffer[offset],
+            0x1 => buffer[offset..].Read<ushort>() + 0x100U,
+            0x2 => buffer[offset..].Read<uint>(),
             _ => throw new NotSupportedException("""
                 64-bit file sizes are not supported.
                 """)
