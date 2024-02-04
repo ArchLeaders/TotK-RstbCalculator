@@ -9,17 +9,17 @@ Primarily created for [TKMM](https://github.com/TKMM-Team/Tkmm)... ~~and I was b
 ## CLI Usage
 
 ```
-...
+RstbGenerator gen "path/to/mod/romfs"
 ```
 
 ## API Usage
 
 ```cs
 // Single-threaded
-RstbGenerator.Generate(romfs: "path/to/mod/romfs");
+RstbGenerator generator = new(romfs: "path/to/mod/romfs");
 
 // Multi-threaded
-await RstbGenerator.GenerateAsync(romfs: "path/to/mod/romfs");
+await generator.GenerateAsync();
 ```
 
 ## Install
