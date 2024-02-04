@@ -2,7 +2,7 @@
   "profiles": {
     "TotkRstbGenerator": {
       "commandName": "Project",
-      "commandLineArgs": "gen F:\\Games\\RomFS\\TotK\\1.2.1 -o \"D:\\bin\\Rstb\\Generated\\ResourceSizeTable.Product.121.rsizetable.zs\""
+      "commandLineArgs": "gen F:\\Games\\RomFS\\TotK\\1.2.1\\romfs -o \"C:\\Users\\ArchLeaders\\AppData\\Roaming\\Ryujinx\\sdcard\\atmosphere\\contents\\0100f2c0115b6000\\romfs\\System\\Resource\\ResourceSizeTable.Product.121.rsizetable.zs\""
     }
   }
 }
