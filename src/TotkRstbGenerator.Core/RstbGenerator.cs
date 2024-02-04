@@ -17,7 +17,7 @@ public class RstbGenerator
     private readonly string _romfs;
     private readonly string _output;
 
-    public RstbGenerator(string romfs, string? output)
+    public RstbGenerator(string romfs, string? output = null)
     {
         _romfs = romfs;
         _output = output ?? romfs.GetRsizetableFile();
