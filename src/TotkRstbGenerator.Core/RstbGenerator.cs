@@ -1,50 +1,27 @@
-﻿using RstbLibrary;
+﻿using Revrs;
+using RstbLibrary;
+using RstbLibrary.Helpers;
+using SarcLibrary;
 using System.Buffers;
-using System.Runtime.CompilerServices;
 using TotkRstbGenerator.Core.Extensions;
+using TotkRstbGenerator.Core.Helpers;
 using TotkRstbGenerator.Core.Models;
 using ZstdSharp;
 
 namespace TotkRstbGenerator.Core;
 
-public class RstbGenerator(string romfs, string? output)
+public class RstbGenerator
 {
-    private readonly Rstb _rstb = ReadVanillaRsizetableFile();
-    private readonly string _romfs = romfs;
-    private readonly string _output = output ?? romfs.GetRsizetableFile();
+    private readonly Rstb _vanilla;
+    private readonly Rstb _result;
+    private readonly string _romfs;
+    private readonly string _output;
 
-    public async Task GenerateAsync()
+    public RstbGenerator(string romfs, string? output)
     {
-        await GenerateAsync(_romfs);
+        _romfs = romfs;
+        _output = output ?? romfs.GetRsizetableFile();
 
-        if (Path.GetDirectoryName(_output) is string path) {
-            Directory.CreateDirectory(path);
-        }
-
-        byte[] data = _rstb.ToBinary();
-        using FileStream fs = File.Create(_output);
-        Compressor compressor = new();
-        fs.Write(compressor.Wrap(data));
-    }
-
-    private async Task GenerateAsync(string src)
-    {
-        Task[] tasks = [
-            Task.Run(() => Parallel.ForEachAsync(Directory.EnumerateDirectories(src), async (folder, token) => {
-                await GenerateAsync(folder);
-            })),
-            Task.Run(() => Parallel.ForEachAsync(Directory.EnumerateFiles(src), (file, token) => {
-                _rstb.InjectFileCalculation(_romfs, file);
-                return ValueTask.CompletedTask;
-            }))
-        ];
-
-        await Task.WhenAll(tasks);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Rstb ReadVanillaRsizetableFile()
-    {
         string path = TotkConfig.Shared.RsizetablePath;
         if (!File.Exists(path)) {
             throw new FileNotFoundException($"""
@@ -58,9 +35,124 @@ public class RstbGenerator(string romfs, string? output)
 
         Span<byte> data = ZstdExtension.Decompress(buffer.AsSpan()[..size]);
 
-        Rstb rstb = Rstb.FromBinary(data);
-        ArrayPool<byte>.Shared.Return(buffer);
+        _vanilla = Rstb.FromBinary(data);
+        _result = Rstb.FromBinary(data);
 
-        return rstb;
+        ArrayPool<byte>.Shared.Return(buffer);
+    }
+
+    public async Task GenerateAsync()
+    {
+        await GenerateAsync(_romfs);
+
+        if (Path.GetDirectoryName(_output) is string path) {
+            Directory.CreateDirectory(path);
+        }
+
+        byte[] data = _result.ToBinary();
+        using FileStream fs = File.Create(_output);
+        Compressor compressor = new(17);
+        fs.Write(compressor.Wrap(data));
+    }
+
+    private async Task GenerateAsync(string src)
+    {
+        Task[] tasks = [
+            Task.Run(() => Parallel.ForEachAsync(Directory.EnumerateDirectories(src), async (folder, token) => {
+                await GenerateAsync(folder);
+            })),
+            Task.Run(() => Parallel.ForEachAsync(Directory.EnumerateFiles(src), (file, token) => {
+                InjectFile(file);
+                return ValueTask.CompletedTask;
+            }))
+        ];
+
+        await Task.WhenAll(tasks);
+    }
+
+    private void InjectFile(string file)
+    {
+        string extension = file.GetRomfsExtension(out bool isZsCompressed);
+        string canonical = Path.GetRelativePath(_romfs, file).ToCanonical();
+
+        if (canonical is "Pack/ZsDic.pack" || extension is ".rsizetable" or ".bwav" or ".webm") {
+            return;
+        }
+
+        if (extension is ".pack") {
+            InjectPackFile(file, isZsCompressed);
+        }
+
+        if (extension is ".asb" or ".ainb" or ".bstar" or ".mc") {
+            using FileStream fs = File.OpenRead(file);
+            int size = (int)fs.Length;
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(size);
+            fs.Read(buffer, 0, size);
+
+            Span<byte> data = buffer.AsSpan()[..size];
+            if (isZsCompressed) {
+                data = data.Decompress();
+            }
+
+            InjectFile(canonical, extension, (uint)data.Length, data);
+
+            ArrayPool<byte>.Shared.Return(buffer);
+            return;
+        }
+
+        InjectFile(canonical, extension,
+            size: isZsCompressed ? ZstdExtension.GetDecompressedSize(file) : (uint)new FileInfo(file).Length,
+            data: []);
+    }
+
+    private void InjectFile(string canonical, string extension, uint size, Span<byte> data)
+    {
+        size += size.AlignUp(0x20U);
+        size = ResourceSizeHelper.EstimateSize(size, canonical, extension, data);
+
+        if (_result.OverflowTable.ContainsKey(canonical)) {
+            _result.OverflowTable[canonical] = size;
+            return;
+        }
+
+        uint hash = Crc32.Compute(canonical);
+        if (_result.HashTable.ContainsKey(hash)) {
+            // If the hash is not in the vanilla
+            // RSTB it is a hash collision
+            if (!_vanilla.HashTable.ContainsKey(hash)) {
+                _result.OverflowTable[canonical] = size;
+                return;
+            }
+        }
+
+        _result.HashTable[hash] = size;
+    }
+
+    private void InjectPackFile(string file, bool isZsCompressed)
+    {
+        using FileStream fs = File.OpenRead(file);
+        int size = (int)fs.Length;
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(size);
+        fs.Read(buffer, 0, size);
+
+        Span<byte> sarcData = buffer.AsSpan()[..size];
+        if (isZsCompressed) {
+            sarcData = ZstdExtension.Decompress(sarcData);
+        }
+
+        RevrsReader reader = new(sarcData);
+        ImmutableSarc sarc = new(ref reader);
+        foreach ((var path, var inlineData) in sarc) {
+            string extension = path.GetRomfsExtension(out isZsCompressed);
+
+            Span<byte> data = inlineData;
+            if (isZsCompressed) {
+                data = inlineData.Decompress();
+            }
+
+            InjectFile(path.ToCanonical(), extension, (uint)data.Length, data);
+        }
+
+        ArrayPool<byte>.Shared.Return(buffer);
     }
 }
