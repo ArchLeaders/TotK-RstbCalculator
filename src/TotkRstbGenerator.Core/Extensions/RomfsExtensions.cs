@@ -38,7 +38,9 @@ public static class RomfsExtensions
         string ext = Path.GetExtension(path);
         if (ext is ".zs" && !path.EndsWith(".ta.zs")) {
             isZsCompressed = true;
-            return Path.GetExtension(path[..^3]);
+            return path.EndsWith(".casset.byml.zs")
+                ? ".casset.byml"
+                : Path.GetExtension(path[..^3]);
         }
 
         isZsCompressed = false;
