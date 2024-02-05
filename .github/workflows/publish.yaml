@@ -1,0 +1,51 @@
+name: Publish
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    permissions: write-all
+    name: Build ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        config:
+          - name: Linux
+            os: ubuntu-latest
+            ext: ~
+            runtime: linux-x64
+          - name: Windows
+            os: ubuntu-latest
+            ext: .exe
+            runtime: win-x64
+
+    env:
+      proj: "TotkRstbGenerator"
+
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Publish Mals Merger
+        shell: bash
+        run: |
+          dotnet publish src/${{ env.proj }}/${{ env.proj }}.csproj \
+          -r ${{ matrix.config.runtime }} \
+          -c Release \
+          -p:DebugType=none \
+          --version-suffix ${{ github.event.release.tag_name }} \
+          -o ${{ matrix.config.name }} \
+
+      - name: Upload artifacts
+        uses: Shopify/upload-to-release@v1.0.1
+        with:
+          name: TotK-RstbGenerator${{ matrix.config.ext }}
+          path: ${{ matrix.config.name }}/${{ env.proj }}${{ matrix.config.ext }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
