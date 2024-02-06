@@ -16,11 +16,13 @@ public class RstbGenerator
     private readonly Rstb _result;
     private readonly string _romfs;
     private readonly string _output;
+    private readonly uint _padding;
 
-    public RstbGenerator(string romfs, string? output = null)
+    public RstbGenerator(string romfs, string? output = null, uint padding = 0)
     {
         _romfs = romfs;
         _output = output ?? romfs.GetRsizetableFile();
+        _padding = padding;
 
         string path = TotkConfig.Shared.RsizetablePath;
         if (!File.Exists(path)) {
@@ -109,6 +111,7 @@ public class RstbGenerator
     {
         size += size.AlignUp(0x20U);
         size = ResourceSizeHelper.EstimateSize(size, canonical, extension, data);
+        size += _padding;
 
         if (_result.OverflowTable.ContainsKey(canonical)) {
             _result.OverflowTable[canonical] = size;
