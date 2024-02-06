@@ -39,7 +39,7 @@ jobs:
           dotnet publish src/${{ env.proj }}/${{ env.proj }}.csproj \
           -r ${{ matrix.config.runtime }} \
           -c Release \
-          --sc false
+          --sc false \
           -p:DebugType=none \
           --version-suffix ${{ github.event.release.tag_name }} \
           -o ${{ matrix.config.name }} \
