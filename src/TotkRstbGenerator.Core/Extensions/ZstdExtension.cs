@@ -14,6 +14,8 @@ public static class ZstdExtension
     private static readonly Decompressor _defaultDecompressor = new();
     private static readonly Dictionary<int, byte[]> _dicts = [];
 
+    private static Object _lock = new Object();
+
     static ZstdExtension()
     {
         if (!File.Exists(TotkConfig.Shared.ZsDicPath)) {
@@ -40,18 +42,23 @@ public static class ZstdExtension
 
     public static Span<byte> Decompress(this Span<byte> buffer)
     {
-        if (buffer.Length < 5 || buffer.Read<uint>() != ZSTD_MAGIC) {
-            return buffer;
-        }
+        lock (_lock)
+        {
+            if (buffer.Length < 5 || buffer.Read<uint>() != ZSTD_MAGIC)
+            {
+                return buffer;
+            }
 
-        int id = GetDictionaryId(buffer);
-        if (id > -1 && _dicts.TryGetValue(id, out byte[]? dict)) {
-            Decompressor decompressor = new();
-            decompressor.LoadDictionary(dict);
-            return decompressor.Unwrap(buffer);
-        }
+            int id = GetDictionaryId(buffer);
+            if (id > -1 && _dicts.TryGetValue(id, out byte[]? dict))
+            {
+                Decompressor decompressor = new();
+                decompressor.LoadDictionary(dict);
+                return decompressor.Unwrap(buffer);
+            }
 
-        return _defaultDecompressor.Unwrap(buffer);
+            return _defaultDecompressor.Unwrap(buffer);
+        }
     }
 
     public static uint GetDecompressedSize(this string file)

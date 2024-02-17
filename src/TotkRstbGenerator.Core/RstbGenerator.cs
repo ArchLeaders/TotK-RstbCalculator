@@ -18,18 +18,20 @@ public class RstbGenerator
     private readonly string _output;
     private readonly uint _padding;
 
-    public RstbGenerator(string romfs, string? output = null, uint padding = 0)
-    {
-        _romfs = romfs;
-        _output = output ?? romfs.GetRsizetableFile();
-        _padding = padding;
+    private static Object _lock = new Object();
 
-        string path = TotkConfig.Shared.RsizetablePath;
+    public RstbGenerator(string romfs, string? rstb = null, string? output = null, uint padding = 0)
+    {
+        string path = rstb ?? TotkConfig.Shared.RsizetablePath;
         if (!File.Exists(path)) {
             throw new FileNotFoundException($"""
                 The vanilla RSTB file 'System/Resource/ResourceSizeTable.Product.{TotkConfig.Shared.Version}.rsizetable.zs' could not be found in your game dump.
                 """);
         }
+
+        _romfs = romfs;
+        _output = output != null ? Path.Combine(output, Path.GetFileName(path)) : romfs.GetRsizetableFile();
+        _padding = padding;
 
         using FileStream fs = File.OpenRead(path);
         byte[] buffer = ArrayPool<byte>.Shared.Rent((int)fs.Length);
@@ -109,26 +111,32 @@ public class RstbGenerator
 
     private void InjectFile(string canonical, string extension, uint size, Span<byte> data)
     {
-        size += size.AlignUp(0x20U);
-        size = ResourceSizeHelper.EstimateSize(size, canonical, extension, data);
-        size += _padding;
+        lock (_lock)
+        {
+            size += size.AlignUp(0x20U);
+            size = ResourceSizeHelper.EstimateSize(size, canonical, extension, data);
+            size += _padding;
 
-        if (_result.OverflowTable.ContainsKey(canonical)) {
-            _result.OverflowTable[canonical] = size;
-            return;
-        }
-
-        uint hash = Crc32.Compute(canonical);
-        if (_result.HashTable.ContainsKey(hash)) {
-            // If the hash is not in the vanilla
-            // RSTB it is a hash collision
-            if (!_vanilla.HashTable.ContainsKey(hash)) {
+            if (_result.OverflowTable.ContainsKey(canonical))
+            {
                 _result.OverflowTable[canonical] = size;
                 return;
             }
-        }
 
-        _result.HashTable[hash] = size;
+            uint hash = Crc32.Compute(canonical);
+            if (_result.HashTable.ContainsKey(hash))
+            {
+                // If the hash is not in the vanilla
+                // RSTB it is a hash collision
+                if (!_vanilla.HashTable.ContainsKey(hash))
+                {
+                    _result.OverflowTable[canonical] = size;
+                    return;
+                }
+            }
+
+            _result.HashTable[hash] = size;
+        }
     }
 
     private void InjectPackFile(string file, bool isZsCompressed)
