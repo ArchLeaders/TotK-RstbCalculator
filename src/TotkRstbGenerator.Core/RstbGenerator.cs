@@ -26,8 +26,9 @@ public class RstbGenerator
 
         string path = TotkConfig.Shared.RsizetablePath;
         if (!File.Exists(path)) {
-            throw new FileNotFoundException($"The vanilla RSTB file 'System/Resource/ResourceSizeTable.Product.{TotkConfig.Shared.Version}.rsizetable.zs'" +
-                        $" could not be found in your game dump.");
+            throw new FileNotFoundException($"""
+                The vanilla RSTB file 'System/Resource/ResourceSizeTable.Product.{TotkConfig.Shared.Version}.rsizetable.zs' could not be found in your game dump.
+                """);
         }
 
         using FileStream fs = File.OpenRead(path);
@@ -51,7 +52,7 @@ public class RstbGenerator
         _romfs = romfs;
         _output = outputFolder is not null
             ? Path.Combine(outputFolder, Path.GetFileName(sourceRstbPath))
-            : Path.Combine(romfs.GetRsizetableFolder(), Path.GetFileName(sourceRstbPath));
+            : Path.Combine(romfs.GetRsizetableFile(), Path.GetFileName(sourceRstbPath));
         _padding = padding;
 
         using FileStream fs = File.OpenRead(sourceRstbPath);
@@ -136,22 +137,28 @@ public class RstbGenerator
         size = ResourceSizeHelper.EstimateSize(size, canonical, extension, data);
         size += _padding;
 
-        lock (_result) {
-            if (_result.OverflowTable.ContainsKey(canonical)) {
+        if (_result.OverflowTable.ContainsKey(canonical)) {
+            lock (_result) {
                 _result.OverflowTable[canonical] = size;
+            }
+
+            return;
+        }
+
+        uint hash = Crc32.Compute(canonical);
+        if (_result.HashTable.ContainsKey(hash)) {
+            // If the hash is not in the vanilla
+            // RSTB it is a hash collision
+            if (!_vanilla.HashTable.ContainsKey(hash)) {
+                lock (_result) {
+                    _result.OverflowTable[canonical] = size;
+                }
+
                 return;
             }
+        }
 
-            uint hash = Crc32.Compute(canonical);
-            if (_result.HashTable.ContainsKey(hash)) {
-                // If the hash is not in the vanilla
-                // RSTB it is a hash collision
-                if (!_vanilla.HashTable.ContainsKey(hash)) {
-                    _result.OverflowTable[canonical] = size;
-                    return;
-                }
-            }
-
+        lock (_result) {
             _result.HashTable[hash] = size;
         }
     }
