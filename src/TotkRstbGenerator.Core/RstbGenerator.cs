@@ -18,25 +18,43 @@ public class RstbGenerator
     private readonly string _output;
     private readonly uint _padding;
 
+    public RstbGenerator(string romfs, string? output = null, uint padding = 0)
+    {
+        _romfs = romfs;
+        _output = output ?? romfs.GetRsizetableFile();
+        _padding = padding;
+
+        string path = TotkConfig.Shared.RsizetablePath;
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException($"The vanilla RSTB file 'System/Resource/ResourceSizeTable.Product.{TotkConfig.Shared.Version}.rsizetable.zs'" +
+                        $" could not be found in your game dump.");
+        }
+
+        using FileStream fs = File.OpenRead(path);
+        byte[] buffer = ArrayPool<byte>.Shared.Rent((int)fs.Length);
+        int size = fs.Read(buffer);
+
+        Span<byte> data = ZstdExtension.Decompress(buffer.AsSpan()[..size]);
+
+        _vanilla = Rstb.FromBinary(data);
+        _result = Rstb.FromBinary(data);
+
+        ArrayPool<byte>.Shared.Return(buffer);
+    }
+
     public RstbGenerator(string romfs, string? sourceRstbPath = null, string? output = null, uint padding = 0)
     {
         string path = sourceRstbPath ?? TotkConfig.Shared.RsizetablePath;
         if (!File.Exists(path))
         {
-            throw new FileNotFoundException(
-                sourceRstbPath is not null
-                    ? $"The file '{sourceRstbPath}' could not be found."
-                    : $"The vanilla RSTB file 'System/Resource/ResourceSizeTable.Product.{TotkConfig.Shared.Version}.rsizetable.zs'" +
-                        $" could not be found in your game dump."
-            );
+            throw new FileNotFoundException($"The file '{sourceRstbPath}' could not be found.");
         }
 
         _romfs = romfs;
-        _output = output is not null ? 
+        _output = output is not null ?
             Path.Combine(output, Path.GetFileName(path)) 
-            : sourceRstbPath is null ? 
-                romfs.GetRsizetableFile()
-                : Path.Combine(romfs.GetRsizetableFolder(), Path.GetFileName(path));
+            : Path.Combine(romfs.GetRsizetableFolder(), Path.GetFileName(path));
         _padding = padding;
 
         using FileStream fs = File.OpenRead(path);
