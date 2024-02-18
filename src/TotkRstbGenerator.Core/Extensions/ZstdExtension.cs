@@ -40,21 +40,21 @@ public static class ZstdExtension
 
     public static Span<byte> Decompress(this Span<byte> buffer)
     {
+        if (buffer.Length < 5 || buffer.Read<uint>() != ZSTD_MAGIC)
+        {
+            return buffer;
+        }
+
+        int id = GetDictionaryId(buffer);
+        if (id > -1 && _dicts.TryGetValue(id, out byte[]? dict))
+        {
+            Decompressor decompressor = new();
+            decompressor.LoadDictionary(dict);
+            return decompressor.Unwrap(buffer);
+        }
+
         lock (_defaultDecompressor)
         {
-            if (buffer.Length < 5 || buffer.Read<uint>() != ZSTD_MAGIC)
-            {
-                return buffer;
-            }
-
-            int id = GetDictionaryId(buffer);
-            if (id > -1 && _dicts.TryGetValue(id, out byte[]? dict))
-            {
-                Decompressor decompressor = new();
-                decompressor.LoadDictionary(dict);
-                return decompressor.Unwrap(buffer);
-            }
-
             return _defaultDecompressor.Unwrap(buffer);
         }
     }

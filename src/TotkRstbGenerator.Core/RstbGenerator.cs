@@ -119,12 +119,12 @@ public class RstbGenerator
 
     private void InjectFile(string canonical, string extension, uint size, Span<byte> data)
     {
+        size += size.AlignUp(0x20U);
+        size = ResourceSizeHelper.EstimateSize(size, canonical, extension, data);
+        size += _padding;
+
         lock (_result)
         {
-            size += size.AlignUp(0x20U);
-            size = ResourceSizeHelper.EstimateSize(size, canonical, extension, data);
-            size += _padding;
-
             if (_result.OverflowTable.ContainsKey(canonical))
             {
                 _result.OverflowTable[canonical] = size;
