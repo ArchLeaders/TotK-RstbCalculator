@@ -1,12 +1,12 @@
 {
   "profiles": {
-    "TotkRstbGenerator": {
-      "commandName": "Project",
-      "commandLineArgs": "gen F:\\Games\\RomFS\\TotK\\1.2.1\\romfs -o \"C:\\Users\\ArchLeaders\\AppData\\Roaming\\Ryujinx\\sdcard\\atmosphere\\contents\\0100f2c0115b6000\\romfs\\System\\Resource\\ResourceSizeTable.Product.121.rsizetable.zs\""
-    },
     "Patch": {
       "commandName": "Project",
       "commandLineArgs": "patch F:\\Games\\RomFS\\Totk\\1.2.1\\romfs D:\\Games\\Emulation\\RomFS\\Totk\\1.2.1\\System\\Resource\\ResourceSizeTable.Product.121.rsizetable.zs D:\\Games\\Emulation\\RomFS\\Totk\\1.2.0\\System\\Resource\\ResourceSizeTable.Product.120.rsizetable.zs D:\\Games\\Emulation\\RomFS\\Totk\\1.1.2\\System\\Resource\\ResourceSizeTable.Product.112.rsizetable.zs D:\\Games\\Emulation\\RomFS\\Totk\\1.1.1\\System\\Resource\\ResourceSizeTable.Product.111.rsizetable.zs D:\\Games\\Emulation\\RomFS\\Totk\\1.1.0\\System\\Resource\\ResourceSizeTable.Product.110.rsizetable.zs D:\\Games\\Emulation\\RomFS\\Totk\\1.0.0\\System\\Resource\\ResourceSizeTable.Product.100.rsizetable.zs -o \"C:\\Users\\ArchLeaders\\AppData\\Roaming\\Ryujinx\\sdcard\\atmosphere\\contents\\0100f2c0115b6000\\romfs\\System\\Resource\""
+    },
+    "Gen": {
+      "commandName": "Project",
+      "commandLineArgs": "gen F:\\Games\\RomFS\\TotK\\1.2.1\\romfs -o \"C:\\Users\\ArchLeaders\\AppData\\Roaming\\Ryujinx\\sdcard\\atmosphere\\contents\\0100f2c0115b6000\\romfs\\System\\Resource\\ResourceSizeTable.Product.121.rsizetable.zs\""
     }
   }
 }
