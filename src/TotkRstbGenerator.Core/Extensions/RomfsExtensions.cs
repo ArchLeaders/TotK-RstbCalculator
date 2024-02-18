@@ -8,11 +8,9 @@ public static class RomfsExtensions
     public static int GetVersion(this string romfsFolder, int @default = 100)
     {
         string regionLangMask = Path.Combine(romfsFolder, "System", "RegionLangMask.txt");
-        if (File.Exists(regionLangMask))
-        {
+        if (File.Exists(regionLangMask)) {
             string[] lines = File.ReadAllLines(regionLangMask);
-            if (lines.Length >= 3 && int.TryParse(lines[2], out int value))
-            {
+            if (lines.Length >= 3 && int.TryParse(lines[2], out int value)) {
                 return value;
             }
         }
@@ -52,5 +50,11 @@ public static class RomfsExtensions
     public static string GetRsizetableFile(this string romfs)
     {
         return Path.Combine(romfs, "System", "Resource", $"ResourceSizeTable.Product.{TotkConfig.Shared.Version}.rsizetable.zs");
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string GetRsizetableFolder(this string romfs)
+    {
+        return Path.Combine(romfs, "System", "Resource");
     }
 }

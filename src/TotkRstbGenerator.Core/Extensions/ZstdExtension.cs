@@ -51,7 +51,9 @@ public static class ZstdExtension
             return decompressor.Unwrap(buffer);
         }
 
-        return _defaultDecompressor.Unwrap(buffer);
+        lock (_defaultDecompressor) {
+            return _defaultDecompressor.Unwrap(buffer);
+        }
     }
 
     public static uint GetDecompressedSize(this string file)

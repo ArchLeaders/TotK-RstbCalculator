@@ -17,4 +17,19 @@ public class RstbCommands
         RstbGenerator generator = new(romfs, output, padding);
         await generator.GenerateAsync();
     }
+
+    [Command("patch", Description = "Calculate the RSTB values for a input rstbs")]
+    public async Task Patch([Argument] string romfs, [Argument] string[] inputRstbFiles, [Option("output", ['o'], Description = "Output Folder")] string? output, [Option("padding", ['p'], Description = "Adds padding to every generated RSTB value")] uint padding = 0)
+    {
+        Task[] tasks = new Task[inputRstbFiles.Length];
+        for (int i = 0; i < inputRstbFiles.Length; i++) {
+            string rstbFile = inputRstbFiles[i];
+            tasks[i] = Task.Run(async () => {
+                RstbGenerator generator = new(romfs, rstbFile, output, padding);
+                await generator.GenerateAsync();
+            });
+        }
+
+        await Task.WhenAll(tasks);
+    }
 }

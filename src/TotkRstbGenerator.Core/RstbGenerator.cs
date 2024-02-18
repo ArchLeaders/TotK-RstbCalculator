@@ -26,12 +26,35 @@ public class RstbGenerator
 
         string path = TotkConfig.Shared.RsizetablePath;
         if (!File.Exists(path)) {
-            throw new FileNotFoundException($"""
-                The vanilla RSTB file 'System/Resource/ResourceSizeTable.Product.{TotkConfig.Shared.Version}.rsizetable.zs' could not be found in your game dump.
-                """);
+            throw new FileNotFoundException($"The vanilla RSTB file 'System/Resource/ResourceSizeTable.Product.{TotkConfig.Shared.Version}.rsizetable.zs'" +
+                        $" could not be found in your game dump.");
         }
 
         using FileStream fs = File.OpenRead(path);
+        byte[] buffer = ArrayPool<byte>.Shared.Rent((int)fs.Length);
+        int size = fs.Read(buffer);
+
+        Span<byte> data = ZstdExtension.Decompress(buffer.AsSpan()[..size]);
+
+        _vanilla = Rstb.FromBinary(data);
+        _result = Rstb.FromBinary(data);
+
+        ArrayPool<byte>.Shared.Return(buffer);
+    }
+
+    public RstbGenerator(string romfs, string sourceRstbPath, string? outputFolder = null, uint padding = 0)
+    {
+        if (!File.Exists(sourceRstbPath)) {
+            throw new FileNotFoundException($"The file '{sourceRstbPath}' could not be found.");
+        }
+
+        _romfs = romfs;
+        _output = outputFolder is not null
+            ? Path.Combine(outputFolder, Path.GetFileName(sourceRstbPath))
+            : Path.Combine(romfs.GetRsizetableFolder(), Path.GetFileName(sourceRstbPath));
+        _padding = padding;
+
+        using FileStream fs = File.OpenRead(sourceRstbPath);
         byte[] buffer = ArrayPool<byte>.Shared.Rent((int)fs.Length);
         int size = fs.Read(buffer);
 
@@ -113,22 +136,24 @@ public class RstbGenerator
         size = ResourceSizeHelper.EstimateSize(size, canonical, extension, data);
         size += _padding;
 
-        if (_result.OverflowTable.ContainsKey(canonical)) {
-            _result.OverflowTable[canonical] = size;
-            return;
-        }
-
-        uint hash = Crc32.Compute(canonical);
-        if (_result.HashTable.ContainsKey(hash)) {
-            // If the hash is not in the vanilla
-            // RSTB it is a hash collision
-            if (!_vanilla.HashTable.ContainsKey(hash)) {
+        lock (_result) {
+            if (_result.OverflowTable.ContainsKey(canonical)) {
                 _result.OverflowTable[canonical] = size;
                 return;
             }
-        }
 
-        _result.HashTable[hash] = size;
+            uint hash = Crc32.Compute(canonical);
+            if (_result.HashTable.ContainsKey(hash)) {
+                // If the hash is not in the vanilla
+                // RSTB it is a hash collision
+                if (!_vanilla.HashTable.ContainsKey(hash)) {
+                    _result.OverflowTable[canonical] = size;
+                    return;
+                }
+            }
+
+            _result.HashTable[hash] = size;
+        }
     }
 
     private void InjectPackFile(string file, bool isZsCompressed)
