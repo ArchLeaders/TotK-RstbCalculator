@@ -20,9 +20,11 @@ public class RstbGenerator
 
     private static Object _lock = new Object();
 
-    public RstbGenerator(string romfs, string? rstb = null, string? output = null, uint padding = 0)
+    public RstbGenerator(string romfs, string? sourceRstbPath = null, string? output = null, uint padding = 0)
     {
-        string path = rstb ?? TotkConfig.Shared.RsizetablePath;
+        // Throw if sourceRstbPath is not null and does not exist.
+        // The path error is confusing when it may not be the vanilla file
+        string path = sourceRstbPath ?? TotkConfig.Shared.RsizetablePath;
         if (!File.Exists(path)) {
             throw new FileNotFoundException($"""
                 The vanilla RSTB file 'System/Resource/ResourceSizeTable.Product.{TotkConfig.Shared.Version}.rsizetable.zs' could not be found in your game dump.
