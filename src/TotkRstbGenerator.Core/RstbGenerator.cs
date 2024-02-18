@@ -20,7 +20,6 @@ public class RstbGenerator
 
     public RstbGenerator(string romfs, string? sourceRstbPath = null, string? output = null, uint padding = 0)
     {
-        // Throw if sourceRstbPath or TotkConfig.Shared.RsizetablePath does not exist.
         string path = sourceRstbPath ?? TotkConfig.Shared.RsizetablePath;
         if (!File.Exists(path)) {
             if (sourceRstbPath == null)
