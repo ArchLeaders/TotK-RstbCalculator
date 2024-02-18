@@ -43,21 +43,20 @@ public class RstbGenerator
         ArrayPool<byte>.Shared.Return(buffer);
     }
 
-    public RstbGenerator(string romfs, string? sourceRstbPath = null, string? output = null, uint padding = 0)
+    public RstbGenerator(string romfs, string sourceRstbPath, string? output = null, uint padding = 0)
     {
-        string path = sourceRstbPath ?? TotkConfig.Shared.RsizetablePath;
-        if (!File.Exists(path))
+        if (!File.Exists(sourceRstbPath))
         {
             throw new FileNotFoundException($"The file '{sourceRstbPath}' could not be found.");
         }
 
         _romfs = romfs;
         _output = output is not null ?
-            Path.Combine(output, Path.GetFileName(path)) 
-            : Path.Combine(romfs.GetRsizetableFolder(), Path.GetFileName(path));
+            Path.Combine(output, Path.GetFileName(sourceRstbPath)) 
+            : Path.Combine(romfs.GetRsizetableFolder(), Path.GetFileName(sourceRstbPath));
         _padding = padding;
 
-        using FileStream fs = File.OpenRead(path);
+        using FileStream fs = File.OpenRead(sourceRstbPath);
         byte[] buffer = ArrayPool<byte>.Shared.Rent((int)fs.Length);
         int size = fs.Read(buffer);
 
