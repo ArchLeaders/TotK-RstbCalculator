@@ -25,8 +25,7 @@ public class RstbCommands
         List<Task> tasks = new List<Task>();
 
         // Create Tasks
-        foreach (var rstb in rstbs)
-        {
+        foreach (var rstb in rstbs) {
             tasks.Add(Task.Run(async () => {
                 RstbGenerator generator = new RstbGenerator(romfs, rstb, output, padding);
                 await generator.GenerateAsync();

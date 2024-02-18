@@ -25,8 +25,7 @@ public class RstbGenerator
         _padding = padding;
 
         string path = TotkConfig.Shared.RsizetablePath;
-        if (!File.Exists(path))
-        {
+        if (!File.Exists(path)) {
             throw new FileNotFoundException($"The vanilla RSTB file 'System/Resource/ResourceSizeTable.Product.{TotkConfig.Shared.Version}.rsizetable.zs'" +
                         $" could not be found in your game dump.");
         }
@@ -43,19 +42,19 @@ public class RstbGenerator
         ArrayPool<byte>.Shared.Return(buffer);
     }
 
-    public RstbGenerator(string romfs, string sourceRstbPath, string? output = null, uint padding = 0)
+    public RstbGenerator(string romfs, string sourceRstbPath, string? outputFolder = null, uint padding = 0)
     {
         if (!File.Exists(sourceRstbPath)) {
             throw new FileNotFoundException($"The file '{sourceRstbPath}' could not be found.");
         }
 
         _romfs = romfs;
-        _output = output is not null ?
-            Path.Combine(output, Path.GetFileName(path)) 
-            : Path.Combine(romfs.GetRsizetableFolder(), Path.GetFileName(path));
+        _output = outputFolder is not null
+            ? Path.Combine(outputFolder, Path.GetFileName(sourceRstbPath))
+            : Path.Combine(romfs.GetRsizetableFolder(), Path.GetFileName(sourceRstbPath));
         _padding = padding;
 
-        using FileStream fs = File.OpenRead(path);
+        using FileStream fs = File.OpenRead(sourceRstbPath);
         byte[] buffer = ArrayPool<byte>.Shared.Rent((int)fs.Length);
         int size = fs.Read(buffer);
 
@@ -137,21 +136,17 @@ public class RstbGenerator
         size = ResourceSizeHelper.EstimateSize(size, canonical, extension, data);
         size += _padding;
 
-        lock (_result)
-        {
-            if (_result.OverflowTable.ContainsKey(canonical))
-            {
+        lock (_result) {
+            if (_result.OverflowTable.ContainsKey(canonical)) {
                 _result.OverflowTable[canonical] = size;
                 return;
             }
 
             uint hash = Crc32.Compute(canonical);
-            if (_result.HashTable.ContainsKey(hash))
-            {
+            if (_result.HashTable.ContainsKey(hash)) {
                 // If the hash is not in the vanilla
                 // RSTB it is a hash collision
-                if (!_vanilla.HashTable.ContainsKey(hash))
-                {
+                if (!_vanilla.HashTable.ContainsKey(hash)) {
                     _result.OverflowTable[canonical] = size;
                     return;
                 }
