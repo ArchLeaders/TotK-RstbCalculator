@@ -12,27 +12,28 @@ public class RstbCommands
         """;
 
     [Command("generate", Aliases = ["gen", "calculate", "calc"], Description = "Calculate the RSTB values for a target RomFS folder")]
-    public async Task Generate([Argument] string romfs, [Option("rstbs", ['r'], Description = "An list of rstb files to use to patch.")] string[]? rstbs, [Option("output", ['o'], Description = "Output Folder")] string? output, [Option("padding", ['p'], Description = "Adds padding to every generated RSTB value")] uint padding = 0)
+    public async Task Generate([Argument] string romfs, string[]? rstbs, [Option("output", ['o'], Description = GEN_OUTPUT_DESC)] string? output, [Option("padding", ['p'], Description = "Adds padding to every generated RSTB value")] uint padding = 0)
     {
-        // Calculate list of rstbs
-        if (rstbs != null)
-        {
-            List<Task> tasks = new List<Task>();
-
-            foreach (var rstb in rstbs)
-            {
-                tasks.Add(Task.Run(async () => {
-                    RstbGenerator generator = new RstbGenerator(romfs, rstb, output, padding);
-                    await generator.GenerateAsync();
-                }));
-            }
-
-            await Task.WhenAll(tasks);
-            return;
-        }
-
-        // Regular run
         RstbGenerator generator = new(romfs, null, output, padding);
         await generator.GenerateAsync();
+    }
+
+    [Command("patch", Description = "Calculate the RSTB values for a input rstbs")]
+    public async Task Patch([Argument] string romfs, [Argument] string[] rstbs, [Argument] string output, [Option("padding", ['p'], Description = "Adds padding to every generated RSTB value")] uint padding = 0)
+    {
+        // Prepare Vars
+        List<Task> tasks = new List<Task>();
+
+        // Create Tasks
+        foreach (var rstb in rstbs)
+        {
+            tasks.Add(Task.Run(async () => {
+                RstbGenerator generator = new RstbGenerator(romfs, rstb, output, padding);
+                await generator.GenerateAsync();
+            }));
+        }
+
+        // Run Tasks
+        await Task.WhenAll(tasks);
     }
 }

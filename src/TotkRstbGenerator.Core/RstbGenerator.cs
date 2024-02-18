@@ -18,17 +18,23 @@ public class RstbGenerator
     private readonly string _output;
     private readonly uint _padding;
 
-    private static Object _lock = new Object();
-
     public RstbGenerator(string romfs, string? sourceRstbPath = null, string? output = null, uint padding = 0)
     {
-        // Throw if sourceRstbPath is not null and does not exist.
-        // The path error is confusing when it may not be the vanilla file
+        // Throw if sourceRstbPath or TotkConfig.Shared.RsizetablePath does not exist.
         string path = sourceRstbPath ?? TotkConfig.Shared.RsizetablePath;
         if (!File.Exists(path)) {
-            throw new FileNotFoundException($"""
+            if (sourceRstbPath == null)
+            {
+                throw new FileNotFoundException($"""
                 The vanilla RSTB file 'System/Resource/ResourceSizeTable.Product.{TotkConfig.Shared.Version}.rsizetable.zs' could not be found in your game dump.
                 """);
+            }
+            else
+            {
+                throw new FileNotFoundException($"""
+                Input path: {sourceRstbPath} is not a valid RSTB file.
+                """);
+            }
         }
 
         _romfs = romfs;
@@ -113,7 +119,7 @@ public class RstbGenerator
 
     private void InjectFile(string canonical, string extension, uint size, Span<byte> data)
     {
-        lock (_lock)
+        lock (_result)
         {
             size += size.AlignUp(0x20U);
             size = ResourceSizeHelper.EstimateSize(size, canonical, extension, data);
