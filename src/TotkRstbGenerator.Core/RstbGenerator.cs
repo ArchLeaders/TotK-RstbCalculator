@@ -21,23 +21,22 @@ public class RstbGenerator
     public RstbGenerator(string romfs, string? sourceRstbPath = null, string? output = null, uint padding = 0)
     {
         string path = sourceRstbPath ?? TotkConfig.Shared.RsizetablePath;
-        if (!File.Exists(path)) {
-            if (sourceRstbPath == null)
-            {
-                throw new FileNotFoundException($"""
-                The vanilla RSTB file 'System/Resource/ResourceSizeTable.Product.{TotkConfig.Shared.Version}.rsizetable.zs' could not be found in your game dump.
-                """);
-            }
-            else
-            {
-                throw new FileNotFoundException($"""
-                Input path: {sourceRstbPath} is not a valid RSTB file.
-                """);
-            }
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException(
+                sourceRstbPath is not null
+                    ? $"The file '{sourceRstbPath}' could not be found."
+                    : $"The vanilla RSTB file 'System/Resource/ResourceSizeTable.Product.{TotkConfig.Shared.Version}.rsizetable.zs'" +
+                        $" could not be found in your game dump."
+            );
         }
 
         _romfs = romfs;
-        _output = output != null ? Path.Combine(output, Path.GetFileName(path)) : romfs.GetRsizetableFile();
+        _output = output is not null ? 
+            Path.Combine(output, Path.GetFileName(path)) 
+            : sourceRstbPath is null ? 
+                romfs.GetRsizetableFile()
+                : Path.Combine(romfs.GetRsizetableFolder(), Path.GetFileName(path));
         _padding = padding;
 
         using FileStream fs = File.OpenRead(path);

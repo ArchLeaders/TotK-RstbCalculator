@@ -19,7 +19,7 @@ public class RstbCommands
     }
 
     [Command("patch", Description = "Calculate the RSTB values for a input rstbs")]
-    public async Task Patch([Argument] string romfs, [Argument] string[] rstbs, [Argument] string output, [Option("padding", ['p'], Description = "Adds padding to every generated RSTB value")] uint padding = 0)
+    public async Task Patch([Argument] string romfs, [Argument] string[] rstbs, [Option("output", ['o'], Description = "Output Folder")] string? output, [Option("padding", ['p'], Description = "Adds padding to every generated RSTB value")] uint padding = 0)
     {
         // Prepare Vars
         List<Task> tasks = new List<Task>();

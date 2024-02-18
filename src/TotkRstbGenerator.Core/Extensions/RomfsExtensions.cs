@@ -53,4 +53,10 @@ public static class RomfsExtensions
     {
         return Path.Combine(romfs, "System", "Resource", $"ResourceSizeTable.Product.{TotkConfig.Shared.Version}.rsizetable.zs");
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string GetRsizetableFolder(this string romfs)
+    {
+        return Path.Combine(romfs, "System", "Resource");
+    }
 }
