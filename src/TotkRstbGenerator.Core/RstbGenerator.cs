@@ -123,6 +123,8 @@ public class RstbGenerator
         size = ResourceSizeHelper.EstimateSize(size, canonical, extension, data);
         size += _padding;
 
+        // Locking due to race conditions, also changing the rstb class to use ConcurrentDictionary might be slower than using lock
+        // Source: https://cc.davelozinski.com/c-sharp/dictionary-vs-concurrentdictionary
         lock (_result)
         {
             if (_result.OverflowTable.ContainsKey(canonical))
