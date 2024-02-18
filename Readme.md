@@ -9,7 +9,7 @@ Primarily created for [TKMM](https://github.com/TKMM-Team/Tkmm)... ~~and I was b
 ## CLI Usage
 
 ```
-RstbGenerator gen "path/to/mod/romfs"
+RstbGenerator --help
 ```
 
 ## API Usage
