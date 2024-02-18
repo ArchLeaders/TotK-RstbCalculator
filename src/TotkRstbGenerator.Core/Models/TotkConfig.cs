@@ -1,7 +1,7 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Data;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using TotkRstbGenerator.Core.Extensions;
-using System.Data;
 
 namespace TotkRstbGenerator.Core.Models;
 

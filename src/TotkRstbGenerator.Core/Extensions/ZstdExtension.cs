@@ -52,8 +52,7 @@ public static class ZstdExtension
         }
 
         // Locking due to the need to decompress multiple rstb during patch mode
-        lock (_defaultDecompressor)
-        {
+        lock (_defaultDecompressor) {
             return _defaultDecompressor.Unwrap(buffer);
         }
     }
