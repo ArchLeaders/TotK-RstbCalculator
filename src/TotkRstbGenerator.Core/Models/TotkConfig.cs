@@ -7,7 +7,7 @@ namespace TotkRstbGenerator.Core.Models;
 
 public class TotkConfig
 {
-    private static readonly string _path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Totk", "Config.json");
+    private static readonly string _path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "totk", "Config.json");
 
     private static readonly Lazy<TotkConfig> _shared = new(Load);
     public static TotkConfig Shared => _shared.Value;
@@ -26,8 +26,8 @@ public class TotkConfig
     public static TotkConfig Load()
     {
         if (!File.Exists(_path)) {
-            throw new DataException("""
-                A TotK configuration could not be found.
+            throw new DataException($"""
+                A TotK configuration could not be found in '{_path}'
                 """);
         }
 
