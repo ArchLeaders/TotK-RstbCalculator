@@ -10,6 +10,6 @@ public class ModelCodecResourceCalculator : IResourceCalculator
     {
         int flags = data[8..].Read<int>();
         int size = (flags >> 5) << (flags & 0xF);
-        return (uint)((size * 1.05 + 0x1000) * 3.6);
+        return (uint)((size * 1.15 + 0x1000) * 3.6);
     }
 }
