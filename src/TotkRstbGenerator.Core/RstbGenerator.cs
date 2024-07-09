@@ -3,9 +3,9 @@ using RstbLibrary;
 using RstbLibrary.Helpers;
 using SarcLibrary;
 using System.Buffers;
+using TotkCommon;
 using TotkRstbGenerator.Core.Extensions;
 using TotkRstbGenerator.Core.Helpers;
-using TotkRstbGenerator.Core.Models;
 using ZstdSharp;
 
 namespace TotkRstbGenerator.Core;
@@ -24,10 +24,10 @@ public class RstbGenerator
         _output = output ?? romfs.GetRsizetableFile();
         _padding = padding;
 
-        string path = TotkConfig.Shared.RsizetablePath;
+        string path = Path.Combine(Totk.Config.GamePath, "System", "Resource", $"ResourceSizeTable.Product.{Totk.Config.Version}.rsizetable.zs");
         if (!File.Exists(path)) {
             throw new FileNotFoundException($"""
-                The vanilla RSTB file 'System/Resource/ResourceSizeTable.Product.{TotkConfig.Shared.Version}.rsizetable.zs' could not be found in your game dump.
+                The vanilla RSTB file 'System/Resource/ResourceSizeTable.Product.{Totk.Config.Version}.rsizetable.zs' could not be found in your game dump.
                 """);
         }
 
@@ -35,7 +35,7 @@ public class RstbGenerator
         byte[] buffer = ArrayPool<byte>.Shared.Rent((int)fs.Length);
         int size = fs.Read(buffer);
 
-        Span<byte> data = ZstdExtension.Decompress(buffer.AsSpan()[..size]);
+        Span<byte> data = Totk.Zstd.Decompress(buffer.AsSpan()[..size]);
 
         _vanilla = Rstb.FromBinary(data);
         _result = Rstb.FromBinary(data);
@@ -59,7 +59,7 @@ public class RstbGenerator
         byte[] buffer = ArrayPool<byte>.Shared.Rent((int)fs.Length);
         int size = fs.Read(buffer);
 
-        Span<byte> data = ZstdExtension.Decompress(buffer.AsSpan()[..size]);
+        Span<byte> data = Totk.Zstd.Decompress(buffer.AsSpan()[..size]);
 
         _vanilla = Rstb.FromBinary(data);
         _result = Rstb.FromBinary(data);
@@ -117,7 +117,7 @@ public class RstbGenerator
 
             Span<byte> data = buffer.AsSpan()[..size];
             if (isZsCompressed) {
-                data = data.Decompress();
+                data = Totk.Zstd.Decompress(data);
             }
 
             InjectFile(canonical, extension, (uint)data.Length, data);
@@ -126,9 +126,15 @@ public class RstbGenerator
             return;
         }
 
-        InjectFile(canonical, extension,
-            size: isZsCompressed ? ZstdExtension.GetDecompressedSize(file) : (uint)new FileInfo(file).Length,
-            data: []);
+        FileInfo fileInfo = new(file);
+
+        if (isZsCompressed) {
+            using FileStream fs = fileInfo.OpenRead();
+            InjectFile(canonical, extension, size: (uint)Zstd.GetDecompressedSize(fs), data: []);
+            return;
+        }
+
+        InjectFile(canonical, extension, size: (uint)fileInfo.Length, data: []);
     }
 
     private void InjectFile(string canonical, string extension, uint size, Span<byte> data)
@@ -172,7 +178,7 @@ public class RstbGenerator
 
         Span<byte> sarcData = buffer.AsSpan()[..size];
         if (isZsCompressed) {
-            sarcData = ZstdExtension.Decompress(sarcData);
+            sarcData = Totk.Zstd.Decompress(sarcData);
         }
 
         RevrsReader reader = new(sarcData);
@@ -182,7 +188,7 @@ public class RstbGenerator
 
             Span<byte> data = inlineData;
             if (isZsCompressed) {
-                data = inlineData.Decompress();
+                data = Totk.Zstd.Decompress(inlineData);
             }
 
             InjectFile(path.ToCanonical(), extension, (uint)data.Length, data);

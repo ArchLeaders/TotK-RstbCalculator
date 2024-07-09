@@ -1,5 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
-using TotkRstbGenerator.Core.Models;
+using TotkCommon;
 
 namespace TotkRstbGenerator.Core.Extensions;
 
@@ -49,7 +49,7 @@ public static class RomfsExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string GetRsizetableFile(this string romfs)
     {
-        return Path.Combine(romfs, "System", "Resource", $"ResourceSizeTable.Product.{TotkConfig.Shared.Version}.rsizetable.zs");
+        return Path.Combine(romfs, "System", "Resource", $"ResourceSizeTable.Product.{Totk.Config.Version}.rsizetable.zs");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
