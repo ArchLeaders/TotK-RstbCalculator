@@ -76,7 +76,7 @@ public class RstbGenerator
         }
 
         byte[] data = _result.ToBinary();
-        using FileStream fs = File.Create(_output);
+        await using FileStream fs = File.Create(_output);
         Compressor compressor = new(17);
         fs.Write(compressor.Wrap(data));
     }
@@ -84,10 +84,10 @@ public class RstbGenerator
     private async Task GenerateAsync(string src)
     {
         Task[] tasks = [
-            Task.Run(() => Parallel.ForEachAsync(Directory.EnumerateDirectories(src), async (folder, token) => {
+            Task.Run(() => Parallel.ForEachAsync(Directory.EnumerateDirectories(src), async (folder, _) => {
                 await GenerateAsync(folder);
             })),
-            Task.Run(() => Parallel.ForEachAsync(Directory.EnumerateFiles(src), (file, token) => {
+            Task.Run(() => Parallel.ForEachAsync(Directory.EnumerateFiles(src), (file, _) => {
                 InjectFile(file);
                 return ValueTask.CompletedTask;
             }))
